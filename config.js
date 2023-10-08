@@ -19,7 +19,7 @@ module.exports = {
   baseURL: 'https://express-2bof-74253-5-1312822569.sh.run.tcloudbase.com',
   // 云托管数据库
   DataBase: {
-    MYSQL_ADDRESS: '10.13.103.14:3306',
+    MYSQL_ADDRESS: '10.13.103.14',
     MYSQL_USERNAME: 'root',
     MYSQL_PASSWORD: 'E7NxuASQ',
     database: 'nodejs_demo',
