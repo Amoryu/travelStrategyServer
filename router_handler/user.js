@@ -168,12 +168,11 @@ exports.postAvatar = (req, res) => {
   let lastPicture = null
   db.query(`select avatar from ${TABLE.User} where username ="${req.body.username}"`, (err, results) => {
     // console.log(err, results)
-    lastPicture = results[0].avatar
-    // console.log('上一张图片的文件名', lastPicture)
-    if (req.file.filename) {
+    if (!!results.length) {
+      lastPicture = results[0].coverImg
       fs.unlink(`./uploads/${lastPicture.split('uploads/')[1]}`, (err) => {
         // if (err) throw err;
-        // console.log(lastPicture.split('uploads/')[1] + '文件已删除')
+        console.log(lastPicture.split('uploads/')[1] + '文件已删除');
       });
     }
   })
@@ -192,8 +191,8 @@ exports.updateUserInfo = (req, res) => {
   let lastPicture = null
   db.query(`select avatar from ${TABLE.User} where username = "${username}"`, (err, results) => {
     console.log(results)
-    lastPicture = results[0].avatar
-    if (lastPicture) {
+    if (!!results.length) {
+      lastPicture = results[0].coverImg
       fs.unlink(`./uploads/${lastPicture.split('uploads/')[1]}`, (err) => {
         // if (err) throw err;
         console.log(lastPicture.split('uploads/')[1] + '文件已删除');
