@@ -195,7 +195,7 @@ exports.updateUserInfo = (req, res) => {
     lastPicture = results[0].avatar
     if (lastPicture) {
       fs.unlink(`./uploads/${lastPicture.split('uploads/')[1]}`, (err) => {
-        if (err) throw err;
+        // if (err) throw err;
         console.log(lastPicture.split('uploads/')[1] + '文件已删除');
       });
     }
