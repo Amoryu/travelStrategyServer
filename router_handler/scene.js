@@ -174,7 +174,7 @@ exports.postImage = (req, res) => {
       code: ResultCodeEnum.SUCCESS,
       data: {
         // fileUrl: config.baseURL + ":" + config.PORT + '/uploads/' + req.file.filename,
-        fileUrl: "http://ruhf8tgea.hn-bkt.clouddn.com/" + result.data.key
+        fileUrl: config.baseURL + "/" + result.data.key
       }
     })
   })

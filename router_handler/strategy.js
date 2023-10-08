@@ -134,7 +134,8 @@ exports.publish_strategy = (req, res) => {
   const articleInfo = {
     id: uuid.v4(),
     ...req.body,
-    coverImg: config.baseURL + ":" + config.PORT + '/uploads/' + req.file.filename,
+    // coverImg: config.baseURL + ":" + config.PORT + '/uploads/' + req.file.filename,
+    coverImg: config.baseURL + '/uploads/' + req.file.filename,
     publishtime: `${date.getFullYear()}-${date.getMonth() + 1}-${date.getDate()}`,
   }
   const sql = `insert ${TABLE.Strategy} set ?`
@@ -158,7 +159,8 @@ exports.postImage = (req, res) => {
   // console.log(req.file)
   res.send({
     code: ResultCodeEnum.SUCCESS,
-    coverImg: config.baseURL + ":" + config.PORT + '/uploads/' + req.file.filename,
+    // coverImg: config.baseURL + ":" + config.PORT + '/uploads/' + req.file.filename,
+    coverImg: config.baseURL + '/uploads/' + req.file.filename,
   })
 }
 

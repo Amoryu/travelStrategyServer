@@ -39,7 +39,8 @@ exports.register = (req, res) => {
     name: '游客' + req.body.token.substr(3, 7),
     address: '',
     signature: '暂时还没有签名',
-    avatar: config.baseURL + ":" + config.PORT + '/uploads/' + 'defaultAvatar.jpg',
+    // avatar: config.baseURL + ":" + config.PORT + '/uploads/' + 'defaultAvatar.jpg',
+    avatar: config.baseURL + '/uploads/' + 'defaultAvatar.jpg',
     gender: 1,
   }
   const sql = `insert ${TABLE.User} set ?`
@@ -178,7 +179,8 @@ exports.postAvatar = (req, res) => {
   })
   res.send({
     code: ResultCodeEnum.SUCCESS,
-    avatar: config.baseURL + ":" + config.PORT + '/uploads/' + req.file.filename,
+    // avatar: config.baseURL + ":" + config.PORT + '/uploads/' + req.file.filename,
+    avatar: config.baseURL + '/uploads/' + req.file.filename,
   })
 
 }
