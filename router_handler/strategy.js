@@ -156,7 +156,7 @@ exports.publish_strategy = (req, res) => {
 }
 
 exports.postImage = (req, res) => {
-  // console.log(req.file)
+  console.log(req.file)
   res.send({
     code: ResultCodeEnum.SUCCESS,
     // coverImg: config.baseURL + ":" + config.PORT + '/uploads/' + req.file.filename,
