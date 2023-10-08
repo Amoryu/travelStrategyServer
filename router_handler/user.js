@@ -188,11 +188,11 @@ exports.updateUserInfo = (req, res) => {
   console.log(req.body)
   const { username, name, avatar, address, phone, gender, signature } = req.body
 
-  let lastPicture = null
+  let lastPicture = null;
   db.query(`select avatar from ${TABLE.User} where username = "${username}"`, (err, results) => {
     console.log(results)
     if (!!results.length) {
-      lastPicture = results[0].coverImg
+      lastPicture = results[0].avatar
       fs.unlink(`./uploads/${lastPicture.split('uploads/')[1]}`, (err) => {
         // if (err) throw err;
         console.log(lastPicture.split('uploads/')[1] + '文件已删除');
