@@ -16,7 +16,7 @@ module.exports = {
 
 
   // 云托管域名
-  baseURL: 'https://express-nvgi-74253-5-1312822569.sh.run.tcloudbase.com',
+  baseURL: 'https://express-2bof-74253-5-1312822569.sh.run.tcloudbase.com',
   // 云托管数据库
   DataBase: {
     MYSQL_ADDRESS: '10.13.103.14',
