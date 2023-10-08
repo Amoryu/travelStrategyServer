@@ -66,10 +66,10 @@ exports.edit = (req, res) => {
   let lastPicture = null
   db.query(`select coverImg from ${TABLE.Strategy} where id="${req.body.id}"`, (err, results) => {
     console.log(results)
-    lastPicture = results[0].coverImg
-    if (lastPicture) {
+    if (!!results.length) {
+      lastPicture = results[0].coverImg
       fs.unlink(`./uploads/${lastPicture.split('uploads/')[1]}`, (err) => {
-        if (err) throw err;
+        // if (err) throw err;
         console.log(lastPicture.split('uploads/')[1] + '文件已删除');
       });
     }
