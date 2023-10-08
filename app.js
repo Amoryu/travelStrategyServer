@@ -7,8 +7,9 @@ const cors = require('cors')
 app.use(cors())
 
 // 解析接收的params参数
-app.use(express.urlencoded({ extended: true }))
-app.use(express.json());
+const bodyParser = require('body-parser')
+app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.json());
 
 // 配置JWT
 // const { expressjwt: expressJWT } = require('express-jwt')
