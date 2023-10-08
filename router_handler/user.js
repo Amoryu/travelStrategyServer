@@ -198,23 +198,25 @@ exports.updateUserInfo = (req, res) => {
         console.log(lastPicture.split('uploads/')[1] + '文件已删除');
       });
     }
+
+    const sql = `update ${TABLE.User} set name = ?, avatar = ?,address = ?,phone = ?,gender = ?,signature = ? where username = "${username}"`
+    db.query(sql, [name, avatar, address, phone, gender, signature], (err, results) => {
+      if (results.affectedRows === 1) {
+        res.send({
+          code: ResultCodeEnum.SUCCESS,
+          data: results,
+          msg: '修改用户资料成功',
+        })
+      } else {
+        res.send({
+          code: 400,
+          msg: '修改用户资料失败',
+        })
+      }
+    })
   })
 
-  const sql = `update ${TABLE.User} set name = ?, avatar = ?,address = ?,phone = ?,gender = ?,signature = ? where username = "${username}"`
-  db.query(sql, [name, avatar, address, phone, gender, signature], (err, results) => {
-    if (results.affectedRows === 1) {
-      res.send({
-        code: ResultCodeEnum.SUCCESS,
-        data: results,
-        msg: '修改用户资料成功',
-      })
-    } else {
-      res.send({
-        code: 400,
-        msg: '修改用户资料失败',
-      })
-    }
-  })
+
 }
 
 

@@ -73,32 +73,35 @@ exports.edit = (req, res) => {
         console.log(lastPicture.split('uploads/')[1] + '文件已删除');
       });
     }
+
+    const newArticleInfo = {
+      ...req.body,
+    }
+    const sql = `update ${TABLE.Strategy} set title = ?, content = ?, coverImg = ?,type = ?,duration = ?,perCost = ? where id ="${req.body.id}"`
+
+    db.query(sql, [
+      newArticleInfo.title,
+      newArticleInfo.content,
+      newArticleInfo.coverImg,
+      newArticleInfo.type,
+      newArticleInfo.duration,
+      newArticleInfo.perCost
+    ], (err, results) => {
+      // console.log(err, results)
+      if (results.affectedRows !== 1) return res.send({
+        code: 400,
+        msg: "修改文章失败！"
+      });
+      return res.send({
+        code: ResultCodeEnum.SUCCESS,
+        newArticleInfo,
+        msg: "修改文章成功！"
+      });
+    })
+
   })
 
-  const newArticleInfo = {
-    ...req.body,
-  }
-  const sql = `update ${TABLE.Strategy} set title = ?, content = ?, coverImg = ?,type = ?,duration = ?,perCost = ? where id ="${req.body.id}"`
 
-  db.query(sql, [
-    newArticleInfo.title,
-    newArticleInfo.content,
-    newArticleInfo.coverImg,
-    newArticleInfo.type,
-    newArticleInfo.duration,
-    newArticleInfo.perCost
-  ], (err, results) => {
-    // console.log(err, results)
-    if (results.affectedRows !== 1) return res.send({
-      code: 400,
-      msg: "修改文章失败！"
-    });
-    return res.send({
-      code: ResultCodeEnum.SUCCESS,
-      newArticleInfo,
-      msg: "修改文章成功！"
-    });
-  })
 }
 
 
