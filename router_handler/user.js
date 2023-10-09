@@ -169,7 +169,7 @@ exports.postAvatar = (req, res) => {
   db.query(`select avatar from ${TABLE.User} where username ="${req.body.username}"`, (err, results) => {
     // console.log(err, results)
     if (!!results.length) {
-      lastPicture = results[0].coverImg
+      lastPicture = results[0].avatar
       fs.unlink(`./uploads/${lastPicture.split('uploads/')[1]}`, (err) => {
         // if (err) throw err;
         console.log(lastPicture.split('uploads/')[1] + '文件已删除');
@@ -181,8 +181,8 @@ exports.postAvatar = (req, res) => {
     // avatar: config.baseURL + ":" + config.PORT + '/uploads/' + req.file.filename,
     avatar: config.baseURL + '/uploads/' + req.file.filename,
   })
-
 }
+
 // 更新用户信息
 exports.updateUserInfo = (req, res) => {
   console.log(req.body)
