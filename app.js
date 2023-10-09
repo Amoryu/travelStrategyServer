@@ -7,9 +7,8 @@ const cors = require('cors')
 app.use(cors())
 
 // 解析接收的params参数
-const bodyParser = require('body-parser')
-app.use(bodyParser.urlencoded({ extended: true }))
-app.use(bodyParser.json());
+app.use(express.urlencoded({ extended: true }))
+app.use(express.json());
 
 // 配置JWT
 // const { expressjwt: expressJWT } = require('express-jwt')
@@ -24,7 +23,7 @@ const commonRouter = require('./router/common')
 const hotelRouter = require('./router/hotel')
 const tourRouteHandler = require('./router/tour_route')
 
-
+app.use('/uploads', express.static('uploads'))
 app.use('/api', userRouter)
 app.use('/api', strategyRouter)
 app.use('/api', sceneRouter)
@@ -32,7 +31,6 @@ app.use('/api', orderRouter)
 app.use('/api', commonRouter)
 app.use('/api', hotelRouter)
 app.use('/api', tourRouteHandler)
-app.use('/uploads', express.static('uploads'))
 
 
 app.listen(config.PORT, () => {
