@@ -1,4 +1,4 @@
-// 数据库的表名
+// 数据库表
 const TABLE = {
   StrategyCategory: "t_strategycate", //攻略分类表
   Strategy: "t_strategy", //攻略表
@@ -16,7 +16,7 @@ const TABLE = {
   CurArea: "t_current_area"  //当前定位表
 }
 
-// 返回值的状态码
+// 返回值的HTTP状态码
 const RESULT_CODE = {
   SUCCESS: 200, //请求成功
   ERROR: 500, //服务器错误
@@ -24,12 +24,11 @@ const RESULT_CODE = {
   TIMEOUT: 30000, //请求超市
 }
 
-// 开发者的小程序配置信息
+// 开发者工具的小程序配置信息
 const APPLET = {
   appid: 'xxxxxxx',  // 小程序Appid
   secret: 'xxxxxxxxxxxxxx'  // 小程序密钥AppSecret
 }
-
 
 // 导出
 module.exports = {
