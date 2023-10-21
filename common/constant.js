@@ -26,8 +26,8 @@ const RESULT_CODE = {
 
 // 开发者的小程序配置信息
 const APPLET = {
-  appid: 'wxb1b47ee6c46bb1dc',  // 小程序Appid
-  secret: '14aa43f957da0e530e6b4444bf91a0d9'  // 小程序密钥AppSecret
+  appid: 'xxxxxxx',  // 小程序Appid
+  secret: 'xxxxxxxxxxxxxx'  // 小程序密钥AppSecret
 }
 
 
