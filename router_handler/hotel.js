@@ -1,86 +1,134 @@
 const db = require('../db/index');
 const uuid = require('node-uuid')
-const { ResultCodeEnum, TABLE } = require('../common/constant.js')
+const { RESULT_CODE, TABLE } = require('../common/constant.js')
+const fs = require('fs')
+const {
+  deleteLastPicture
+} = require('../common/utils')
 
 
-exports.getHotelList = (req, res) => {
+exports.addHotel = (req, res) => {
   console.log(req.body)
-  let sql = `select * from ${TABLE.Hotel} `
-
-  if (req.body.hotelName) {
-    sql += `where name = "${req.body.hotelName}"`
+  const newHotelInfo = {
+    ...req.body.hotel,
+    id: uuid.v4(),
+    pictureList: Array.isArray(req.body.hotel.pictureList)
+      ? req.body.hotel.pictureList.join('|')
+      : req.body.hotel.pictureList,
+    managerName: ""
   }
 
-  db.query(sql, (err, results) => {
-    res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "获取酒店列表成功",
+  // console.log(newHotelInfo)
+  const sql = `insert ${TABLE.Hotel} set ?`
+
+
+  db.query(sql, newHotelInfo, (err, results) => {
+    // console.log(err, results)
+    if (err) return res.send({
+      code: 400,
+      msg: "添加酒店信息失败",
+    })
+    return res.send({
+      code: RESULT_CODE.SUCCESS,
+      msg: "添加酒店信息成功",
       data: results
     })
   })
 
 }
+exports.deleteHotel = (req, res) => {
+  // console.log(req.body)
 
-exports.roomPayment = (req, res) => {
-  // console.log("roompayment", req.body)
-  const sql = `insert ${TABLE.Order} set ?`
-  let now = new Date()
-  const { roomDetail, checkCondition, userInfo } = req.body
-  const insertObj = {
-    orderNo: uuid.v4(),
-    name: roomDetail.name,
-    type: '酒店',
-    amount: roomDetail.price,
-    createTime: now.toLocaleDateString() + "：" + now.toLocaleTimeString(),
-    state: 2,
-    roomType: roomDetail.roomType,
-    roomNo: roomDetail.roomNo,
-    seller: roomDetail.hotelName,
-    checkInTime: checkCondition.checkInRange[0],
-    leaveTime: checkCondition.checkInRange[1],
-    peopleNum: checkCondition.checkInNum,
-    usertoken: userInfo.token,
-    userwxtoken: userInfo.wxtoken,
-    coverImg: roomDetail.coverImg
-  }
+  const sql = `delete from ${TABLE.Hotel} where id="${req.query.id}"`
 
-  db.query(sql, insertObj, (err, results) => {
+  db.query(sql, (err, results) => {
     // console.log(err, results)
     res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "提交订单成功",
-      data: insertObj
-    })
-  })
-
-}
-
-
-exports.getRoom = (req, res) => {
-  const sql = `select * from ${TABLE.Room} where name = "${req.body.name}" and roomType = "${req.body.type}"`
-
-  db.query(sql, (err, results) => {
-    // results = resuls.map(item => ({ ...item, isSpare: item.isSpare ? true: false }))
-    console.log(err, results)
-    res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "获取酒店成功",
+      code: RESULT_CODE.SUCCESS,
+      msg: "删除酒店成功",
       data: results
     })
   })
 }
+exports.editHotel = (req, res) => {
+  console.log(req.body)
 
-/**
- * 后台管理系统接口
- */
-// 酒店信息
-exports.back_getHotelInfo = (req, res) => {
-  const sql = `select * from ${TABLE.Hotel} where managerName = "${req.body.manager}"`
+  const {
+    id,
+    name,
+    description,
+    address,
+    province,
+    city,
+    area,
+    provinceName,
+    cityName,
+    areaName,
+    phone,
+    facility,
+    roomType,
+    checkTime,
+    leaveTime,
+    roomNumber,
+    pictureList
+  } = req.body
+  const field = `id="${id}",` +
+    `name="${name}",` +
+    `description="${description}",` +
+    `address="${address}",` +
+    `province="${province}",` +
+    `city="${city}",` +
+    `area="${area}",` +
+    `provinceName="${provinceName}",` +
+    `cityName="${cityName}",` +
+    `areaName="${areaName}",` +
+    `phone="${phone}",` +
+    `facility="${facility}",` +
+    `roomType="${roomType}",` +
+    `checkTime="${checkTime}",` +
+    `leaveTime="${leaveTime}",` +
+    `roomNumber=${roomNumber},` +
+    `pictureList="${pictureList}"`
+
+  db.query(`select pictureList from ${TABLE.Hotel} where id = "${id}"`, (err, results) => {
+    // console.log(results)
+
+    if (!!results.length) {
+      lastPicture = results[0].pictureList.split("|")
+      lastPicture.forEach(pic => deleteLastPicture(pic));
+      // console.log(newHotelInfo)
+
+      const sql = `update ${TABLE.Hotel} set ${field} where id = "${req.body.id}"`
+      db.query(sql, (err, results) => {
+        console.log(err, results)
+        if (err) return res.send({
+          code: 400,
+          msg: "更新酒店信息失败",
+        })
+        return res.send({
+          code: RESULT_CODE.SUCCESS,
+          msg: "更新酒店信息成功",
+        })
+      })
+    }
+  })
+
+}
+exports.getHotel = (req, res) => {
+  let sql = `select * from ${TABLE.Hotel} `
+  if (req.query.manager) {
+    sql += `where managerName = "${req.query.manager}"`
+  }
+
+  if (req.query.hotelName) {
+    sql += `where name = "${req.query.hotelName}"`
+  }
+
   db.query(sql, (err, results) => {
     // console.log(results)
     if (results.length) {
       res.send({
-        code: ResultCodeEnum.SUCCESS,
+        code: RESULT_CODE.SUCCESS,
         msg: "获取酒店成功",
         data: results
       })
@@ -95,95 +143,10 @@ exports.back_getHotelInfo = (req, res) => {
   })
 }
 
-exports.back_editHotel = (req, res) => {
-  const newHotelInfo = {
-    ...req.body,
-    pictureList: Array.isArray(req.body.pictureList)
-      ? req.body.pictureList.join('|')
-      : req.body.pictureList
-  }
-  const field = 'id=?, ' +
-    'name=?, ' +
-    'description=?, ' +
-    'address=?, ' +
-    'province=?,' +
-    'city=?,' +
-    'area=?,' +
-    'provinceName=?,' +
-    'cityName=?,' +
-    'areaName=?,' +
-    'phone=?, ' +
-    'facility=?, ' +
-    'roomType=?, ' +
-    'checkTime=?, ' +
-    'leaveTime=?, ' +
-    'roomNumber=?, ' +
-    'pictureList=? '
-
-  console.log(newHotelInfo)
-  const sql = `update ${TABLE.Hotel} set ${field} where id = "${req.body.id}"`
-  db.query(sql, Object.values(newHotelInfo), (err, results) => {
-    // console.log(err, results)
-    if (err) return res.send({
-      code: 400,
-      msg: "更新酒店信息失败",
-    })
-    return res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "更新酒店信息成功",
-      data: results
-    })
-  })
-
-}
-
-exports.back_addHotel = (req, res) => {
-  // console.log(req.body)
-  const newHotelInfo = {
-    ...req.body.hotel,
-    id: uuid.v4(),
-    pictureList: Array.isArray(req.body.hotel.pictureList)
-      ? req.body.hotel.pictureList.join('|')
-      : req.body.hotel.pictureList,
-    managerName: req.body.manager.username
-  }
-
-  // console.log(newHotelInfo)
-  const sql = `insert ${TABLE.Hotel} set ?`
 
 
-  db.query(sql, newHotelInfo, (err, results) => {
-    // console.log(err, results)
-    if (err) return res.send({
-      code: 400,
-      msg: "添加酒店信息失败",
-    })
-    return res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "添加酒店信息成功",
-      data: results
-    })
-  })
-
-}
-
-// 房间管理
-exports.back_getRoom = (req, res) => {
-  const sql = `select * from ${TABLE.Room} where hotelName = "${req.body.hotelName}" `
-
-  db.query(sql, (err, results) => {
-    // results = resuls.map(item => ({ ...item, isSpare: item.isSpare ? true: false }))
-    // console.log(err, results)
-    res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "获取酒店成功",
-      data: results
-    })
-  })
-}
-
-exports.back_addRoom = (req, res) => {
-  // console.log(req.body)
+exports.addRoom = (req, res) => {
+  console.log(req.body)
   const searchSql = `select * from ${TABLE.Hotel} where name = "${req.body.hotelName}"`
 
   db.query(searchSql, (err, results) => {
@@ -208,7 +171,7 @@ exports.back_addRoom = (req, res) => {
         msg: "后台管理系统-添加房间失败！"
       })
       return res.send({
-        code: ResultCodeEnum.SUCCESS,
+        code: RESULT_CODE.SUCCESS,
         data: insertObj,
         msg: "后台管理系统-添加房间成功"
       })
@@ -217,50 +180,67 @@ exports.back_addRoom = (req, res) => {
   })
 
 }
-
-exports.back_editRoom = (req, res) => {
-  const id = req.body.id
-  const updateObj = {
-    ...req.body,
-  }
-  delete updateObj.id
-  delete updateObj.roomNo
-  delete updateObj.checkTime
-  delete updateObj.leaveTime
-  delete updateObj.isSpare
-  delete updateObj.hotelName
-
-  const field =
-    'name=?, ' +
-    'description=?, ' +
-    'price=?, ' +
-    'coverImg=?, ' +
-    'roomType=?'
-
-
-  // console.log(updateObj)
-  const sql = `update ${TABLE.Room} set ${field} where id = "${id}"`
-  db.query(sql, Object.values(updateObj), (err, results) => {
-    // console.log(err, results)
-    res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "更新房间信息成功",
-      data: results
-    })
-  })
-}
-
-exports.back_deleteRoom = (req, res) => {
-  console.log(req.body)
-
-  const sql = `delete from ${TABLE.Room} where id="${req.body.id}"`
+exports.deleteRoom = (req, res) => {
+  const sql = `delete from ${TABLE.Room} where id="${req.query.id}"`
 
   db.query(sql, (err, results) => {
     // console.log(err, results)
     res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: "删除房间成功",
       data: results
     })
   })
 }
+exports.editRoom = (req, res) => {
+  const id = req.body.id
+
+  console.log(req.body)
+  const {
+    name,
+    description,
+    price,
+    coverImg,
+    roomType,
+  } = req.body
+
+  const field = `name="${name}",` +
+    `description="${description}",` +
+    `price="${price}",` +
+    `coverImg="${coverImg}",` +
+    `roomType="${roomType}"`
+
+  // console.log(updateObj)
+  const sql = `update ${TABLE.Room} set ${field} where id = "${id}"`
+  db.query(sql, (err, results) => {
+    // console.log(err, results)
+    res.send({
+      code: RESULT_CODE.SUCCESS,
+      msg: "更新房间信息成功",
+      data: results
+    })
+  })
+}
+exports.getRoom = (req, res) => {
+  let sql = `select * from ${TABLE.Room} `
+
+  if (req.query.hotelName) {
+    sql += `where hotelName = "${req.query.hotelName}" `
+  }
+
+  if (req.query.name && req.query.type) {
+    sql += `where name = "${req.query.name}" and roomType = "${req.query.type}"`
+  }
+
+
+  db.query(sql, (err, results) => {
+    res.send({
+      code: RESULT_CODE.SUCCESS,
+      msg: "获取酒店成功",
+      data: results
+    })
+  })
+}
+
+
+

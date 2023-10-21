@@ -1,3 +1,5 @@
+const fs = require('fs')
+
 /* 处理 multipart/form-data 类型的表单数据，主要用于上传文件 */
 const multer = require('multer')
 const path = require('path')
@@ -18,23 +20,15 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage })
 
 
-
-//七牛云配置文件
-const qiniu = require('qiniu')
-
-// 创建上传凭证（accessKey 和 secretKey在七牛云个人中心中有，lytton是七牛云刚才创建的空间名称）
-const accessKey = 'QJZnZVzBOCANx8sdc-WJ3-OIJoxNPk-tXEtTSVb2'
-const secretKey = 'vNMu5HFw_rPBLO15wuL3nmUN79Ced-t5tznODyTN'
-const mac = new qiniu.auth.digest.Mac(accessKey, secretKey)
-const options = {
-  scope: 'travel-server', //这是你创建存储空间的名子
-  deadline: 1695523678 //这是七牛云生成token的有效期，单位时秒，不设置默认是3600S，一串数字是时间戳
+const deleteLastPicture = (url) => {
+  fs.unlink(`./uploads/${url.split('uploads/')[1]}`, (err) => {
+    if (err) throw err;
+    console.log(url.split('uploads/')[1] + '文件已删除');
+  });
 }
-const putPolicy = new qiniu.rs.PutPolicy(options)
-const uploadToken = putPolicy.uploadToken(mac)
 
 
 module.exports = {
   upload,
-  uploadToken
+  deleteLastPicture
 }

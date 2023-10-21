@@ -5,35 +5,23 @@ const { upload } = require('../common/utils.js')
 
 
 // 小程序接口 
-router.get('/strategy', strategyHandler.get_strategy)
-router.post('/mystrategy', strategyHandler.get_my_strategy)
-router.post('/upload', upload.single('file'), strategyHandler.publish_strategy)
-router.post('/image', upload.single('file'), strategyHandler.postImage)
-router.post('/content', strategyHandler.editContent)
-router.get('/category', strategyHandler.get_strategy_type)
-router.post('/delete', strategyHandler.delete_strategy)
-router.post('/collection', strategyHandler.get_collectStrategy)
-router.post('/collect', strategyHandler.collectStrategy)
-router.post('/collectState', strategyHandler.getCollectState)
-router.post('/publish', strategyHandler.publish)
-router.post('/edit', strategyHandler.edit)
-
-// 10月5日接口修改
-router.post('/article', strategyHandler.getArticle)
-
+router.post('/collection', strategyHandler.collectStrategy)
+router.get('/collection', strategyHandler.get_collectStrategy)
+router.get('/collection/status', strategyHandler.getCollectState)
 
 
 // 后台管理系统接口
-router.get('/strategycate', strategyHandler.back_getStrategyCate)
-router.post('/strategy/addType', strategyHandler.back_addStrategyCate)
-router.post('/strategy/editType', strategyHandler.back_editStrategyCate)
-router.post('/strategy/deleteType', strategyHandler.back_deleteStrategyCate)
+router.post('/strategy/type', strategyHandler.addStrategyCate)
+router.delete('/strategy/type', strategyHandler.deleteStrategyCate)
+router.put('/strategy/type', strategyHandler.editStrategyCate)
+router.get('/strategy/type', strategyHandler.getStrategyCate)
 
-router.post('/strategyshow', strategyHandler.back_setStrategyCateShow)
-router.post('/getstrategy', strategyHandler.back_getStrategy)
-router.post('/addstrategy', strategyHandler.back_addStrategy)
-router.post('/editstrategy', strategyHandler.back_editStrategy)
-router.post('/deletestrategy', strategyHandler.back_deleteStrategy)
 
+router.post('/strategy', strategyHandler.addStrategy)
+router.delete('/strategy', strategyHandler.delete_strategy)
+router.put('/strategy', strategyHandler.editStrategy)
+router.get('/strategy', strategyHandler.getStrategy)
+
+router.post('/strategyshow', strategyHandler.setStrategyCateShow)
 
 module.exports = router;

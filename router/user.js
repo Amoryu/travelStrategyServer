@@ -1,30 +1,25 @@
 const express = require('express')
 const router = express.Router()
 const userHandler = require('../router_handler/user')
-const { upload } = require('../common/utils.js')
-
-// 小程序接口
-router.post('/user', userHandler.user)
-router.post('/wxuser', userHandler.wxUser)
-router.post('/getwxauth', userHandler.wxAuth)
-router.post('/storewxuser', userHandler.storeWxUser)
-router.post('/updateinfo', userHandler.updateUserInfo)
-router.post('/avatar', upload.single('file'), userHandler.postAvatar)
-router.post('/register', userHandler.register)
-router.post('/login/miniapp', userHandler.login)
 
 
-// 获取用户列表
-router.get('/author', userHandler.getUserList)
 
+router.get('/wechat/auth', userHandler.wxAuth)
+router.get('/user/search', userHandler.back_getUserList)
+router.get('/users', userHandler.getUserList)
+router.get('/user', userHandler.getUser)
 
-// 后台管理系统的接口
-router.post('/login', userHandler.back_login)
-router.post('/logout', userHandler.back_logout)
-router.post('/user/list', userHandler.back_getUserList)
-router.post('/changepwd', userHandler.changePassword)
-router.post('/changeusername', userHandler.changeUsername)
-router.post('/userauth', userHandler.back_updateUserInfo)
+router.post('/user/wechat', userHandler.WxUser)
+router.post('/user/login', userHandler.login)
+router.post('/user/logout', userHandler.logOut)
+
+router.put('/user/info', userHandler.updateUserInfo)
+router.put('/register', userHandler.register)
+router.put('/user/role', userHandler.back_updateUserInfo)
+router.put('/user/password', userHandler.changePassword)
+router.put('/user/username', userHandler.changeUsername)
+
+router.delete('/user', userHandler.back_deleteUser)
 
 
 

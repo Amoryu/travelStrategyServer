@@ -1,44 +1,16 @@
 const db = require('../db/index');
-const request = require('request')
-const axios = require('axios')
 const uuid = require('node-uuid')
-const { ResultCodeEnum, TABLE } = require('../common/constant.js')
+const { RESULT_CODE, TABLE } = require('../common/constant.js')
 const config = require('../config.js')
-const { uploadToken } = require('../common/utils.js')
-
 const fs = require('fs');
-const FormData = require('form-data');
+const {
+  deleteLastPicture
+} = require('../common/utils')
 
-
-exports.getScene = (req, res) => {
-  console.log(req.body)
-  const sql = `select * from ${TABLE.Scenery} where name = "${req.body.sceneryName}"`
-
-
-  db.query(sql, (err, results) => {
-    console.log(err, results)
-    results = results.map(item => ({ ...item, isOpen: item.isOpen ? true : false }))
-    res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "获取景点成功",
-      data: results
-    })
-  })
-}
-
-exports.getSwiper = (req, res) => {
-  db.query(`select * from ${TABLE.Swiper}`, (err, results) => {
-    res.send({
-      status: 0,
-      msg: "获取轮播图成功",
-      data: results
-    })
-  })
-}
 
 exports.search_scene = (req, res) => {
   // console.log(req.body)
-  const keyword = "%" + req.body.search + "%"
+  const keyword = "%" + req.query.search + "%"
   const sql = `select * from ${TABLE.Scenery} where name like ?`
   // console.log(keyword)
 
@@ -48,7 +20,7 @@ exports.search_scene = (req, res) => {
     if (results.length) {
       res.send({
         data: {
-          code: ResultCodeEnum.SUCCESS,
+          code: RESULT_CODE.SUCCESS,
           data: results,
           msg: "搜索成功！"
         }
@@ -65,123 +37,27 @@ exports.search_scene = (req, res) => {
 
 }
 
-
-exports.get_billboard = (req, res) => {
-  // console.log(req.body)
-
-  const sql = `select * from ${TABLE.Scenery} where scene_area = "${req.body.city}"`
-
-  db.query(sql, (err, results) => {
-    // console.log(err, results)
-    if (err) return res.send(err);
-    if (results.length) {
-      res.send({
-        code: 1,
-        data: results,
-        msg: "获取排行榜成功！"
-      })
-    } else {
-      res.send({
-        data: {
-          code: 0,
-          msg: "获取排行榜失败！"
-        }
-      })
-    }
-  })
-}
+exports.getScenery = (req, res) => {
+  let sql = `select * from ${TABLE.Scenery} where province = "${req.query.province}" `
 
 
-exports.ticketPayment = (req, res) => {
-  // console.log("门票订单", req.body)
-  const sql = `insert ${TABLE.Order} set ?`
-  let now = new Date()
-  const ticket = req.body.ticket
-  console.log(ticket)
-  const scenery = req.body.scenery
-  const userInfo = req.body.userInfo
-  const insertObj = {
-    orderNo: uuid.v4(),
-    name: ticket.name,
-    type: '门票',
-    amount: ticket.amount,
-    createTime: now.toLocaleDateString() + "：" + now.toLocaleTimeString(),
-    state: 2,
-    seller: scenery.name,
-    peopleNum: req.body.ticketNum,
-    usertoken: userInfo.token,
-    userwxtoken: userInfo.wxtoken,
-    coverImg: scenery.image,
-    bookDay: req.body.day,
-    bookSession: req.body.session,
+  if (req.query.city && req.query.city !== '') {
+    sql = sql + `and city = "${req.query.city}" `
   }
-
-  // console.log(insertObj)
-
-  db.query(sql, insertObj, (err, results) => {
-    // console.log(err, results)
-    res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "提交订单成功",
-      data: insertObj
-    })
-  })
-
-}
-
-
-
-// 后台管理系统的接口
-exports.back_getScenery = (req, res) => {
-  let sql = `select * from ${TABLE.Scenery} where province = "${req.body.province}" `
-  if (req.body.city && req.body.city !== '') {
-    sql = sql + `and city = "${req.body.city}" `
-  }
-  if (req.body.area && req.body.area !== '') {
-    sql = sql + `and area = "${req.body.area}"`
+  if (req.query.area && req.query.area !== '') {
+    sql = sql + `and area = "${req.query.area}"`
   }
 
   db.query(sql, (err, results) => {
     // console.log(err, results)
     results = results.map(item => ({ ...item, isOpen: item.isOpen ? true : false }))
     res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: "后台管理系统_获取景点列表成功",
       data: results
     })
   })
 }
-
-
-exports.postImage = (req, res) => {
-  // console.log(req.file)
-  let formdata = new FormData()
-  formdata.append('file', fs.createReadStream(req.file.path), req.file.originalname)
-  formdata.append('key', new Date().getTime())
-  formdata.append('token', uploadToken)
-  // console.log(formdata)
-
-  axios({
-    url: 'https://up-z2.qiniup.com',
-    method: 'POST',
-    headers: {
-      "Content-Type": 'multipart/form-data'
-    },
-    data: formdata
-  }).then(result => {
-    // console.log(result)
-    res.send({
-      code: ResultCodeEnum.SUCCESS,
-      data: {
-        // fileUrl: config.baseURL + ":" + config.PORT + '/uploads/' + req.file.filename,
-        fileUrl: config.baseURL + "/" + result.data.key
-      }
-    })
-  })
-
-
-}
-
 
 exports.addScenery = (req, res) => {
   // console.log(req.body)
@@ -189,6 +65,7 @@ exports.addScenery = (req, res) => {
     id: uuid.v4(),
     ...req.body,
     isOpen: 1,
+    rank: 0
   }
 
   const sql = `insert ${TABLE.Scenery} set ?`
@@ -201,7 +78,7 @@ exports.addScenery = (req, res) => {
       msg: "后台管理系统-添加景点失败！"
     });
     return res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       data: insertObj,
       msg: "后台管理系统-添加景点成功"
     });
@@ -210,40 +87,55 @@ exports.addScenery = (req, res) => {
 }
 
 exports.editScenery = (req, res) => {
+  console.log(req.body)
   const id = req.body.id
-  const updateObj = {
-    ...req.body,
-  }
-  delete updateObj.id
-  delete updateObj.rank
 
-  const field = 'name=?, ' +
-    'description=?, ' +
-    'province:=?, ' +
-    'city=?, ' +
-    'area=?, ' +
-    'provinceName=?, ' +
-    'cityName=?, ' +
-    'areaName=?, ' +
-    'image=?, ' +
-    'isOpen=?, ' +
-    'address=?'
+  let lastPicture = null
+  db.query(`select image from ${TABLE.Scenery} where id="${id}"`, (err, results) => {
 
-  // console.log(updateObj)
-  const sql = `update ${TABLE.Scenery} set ${field} where id = "${id}"`
-  db.query(sql, Object.values(updateObj), (err, results) => {
-    // console.log(err, results)
-    res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "更新景点信息成功",
-      data: results
+    !!results.length && deleteLastPicture(results[0].image)
+
+    const {
+      name,
+      description,
+      province,
+      city,
+      area,
+      provinceName,
+      cityName,
+      areaName,
+      image,
+      isOpen,
+      address,
+    } = req.body
+
+    const field = `name="${name}",` +
+      `description="${description}",` +
+      `province="${province}",` +
+      `city="${city}",` +
+      `area="${area}",` +
+      `provinceName="${provinceName}",` +
+      `cityName="${cityName}",` +
+      `areaName="${areaName}",` +
+      `image="${image}",` +
+      `isOpen=${isOpen},` +
+      `address="${address}"`
+
+    // console.log(updateObj)
+    const sql = `update ${TABLE.Scenery} set ${field} where id = "${id}"`
+    db.query(sql, (err, results) => {
+      console.log(err, results)
+      res.send({
+        code: RESULT_CODE.SUCCESS,
+        msg: "更新景点信息成功",
+        data: results
+      })
     })
-  })
 
+  })
 }
 
-
-exports.back_SceneryOpen = (req, res) => {
+exports.SceneryOpen = (req, res) => {
   // console.log(req.body)
   let isOpen = req.body.isOpen ? 1 : 0
   let sql = `update ${TABLE.Scenery} set isOpen = ? where name = "${req.body.name}"`
@@ -252,34 +144,37 @@ exports.back_SceneryOpen = (req, res) => {
     // console.log(err, results)
 
     res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: isOpen ? "景点开放成功" : '景区暂停开放',
       data: results
     })
   })
 }
 
+exports.getAllScenery = (req, res) => {
+  let sql = `select * from ${TABLE.Scenery} `
 
-exports.back_sceneList = (req, res) => {
-  let sql = `select * from ${TABLE.Scenery}`
+
+  if (req.query.sceneryName) {
+    sql += `where name = "${req.query.sceneryName}"`
+  }
 
   db.query(sql, (err, results) => {
     results = results.map(item => ({ ...item, isOpen: item.isOpen ? true : false }))
     res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: "后台管理系统_获取景点列表成功",
       data: results
     })
   })
 }
 
-
-exports.back_getTickets = (req, res) => {
+exports.getTickets = (req, res) => {
   // console.log(req.body)
   let sql = `select * from ${TABLE.Ticket} `
 
-  if (req.body.sceneName) {
-    sql += `where sceneName = "${req.body.sceneName}" `
+  if (req.query.sceneName) {
+    sql += `where sceneName = "${req.query.sceneName}" `
   }
 
   db.query(sql, (err, results) => {
@@ -287,14 +182,14 @@ exports.back_getTickets = (req, res) => {
 
     results = results.map(item => ({ ...item, onSale: item.onSale ? true : false }))
     res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: "获取该景点的门票成功",
       data: results
     })
   })
 }
 
-exports.back_addTicket = (req, res) => {
+exports.addTicket = (req, res) => {
   // console.log(req.body)
 
   const regionData = req.body.region
@@ -315,14 +210,14 @@ exports.back_addTicket = (req, res) => {
       msg: "后台管理系统-添加门票失败！"
     });
     return res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       data: insertObj,
       msg: "后台管理系统-添加门票成功"
     });
   })
 }
 
-exports.back_editTicket = (req, res) => {
+exports.editTicket = (req, res) => {
   const id = req.body.id
   const updateObj = {
     ...req.body,
@@ -342,14 +237,14 @@ exports.back_editTicket = (req, res) => {
   db.query(sql, Object.values(updateObj), (err, results) => {
     // console.log(err, results)
     res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: "更新门票信息成功",
       data: results
     })
   })
 }
 
-exports.back_TicketOnSale = (req, res) => {
+exports.TicketOnSale = (req, res) => {
   // console.log(req.body)
   let onSale = req.body.onSale ? 1 : 0
   let sql = `update ${TABLE.Ticket} set onSale = ? where area = "${req.body.area}" and name = "${req.body.name}" `
@@ -358,36 +253,36 @@ exports.back_TicketOnSale = (req, res) => {
     // console.log(err, results)
 
     res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "上架门票成功",
+      code: RESULT_CODE.SUCCESS,
+      msg: onSale ? "已上架该门票" : '已下架该门票',
       data: results
     })
   })
 }
 
-exports.back_deleteScenery = (req, res) => {
-  console.log(req.body)
-  const sql = `delete from ${TABLE.Scenery} where id="${req.body.id}"`
+exports.deleteScenery = (req, res) => {
+  // console.log(req.body)
+  const sql = `delete from ${TABLE.Scenery} where id="${req.query.id}"`
 
   db.query(sql, (err, results) => {
     // console.log(err, results)
     res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: "删除景点成功",
       data: results
     })
   })
 }
 
-exports.back_deleteTicket = (req, res) => {
-  console.log(req.body)
+exports.deleteTicket = (req, res) => {
+  // console.log(req.body)
 
-  const sql = `delete from ${TABLE.Ticket} where id="${req.body.id}"`
+  const sql = `delete from ${TABLE.Ticket} where id="${req.query.id}"`
 
   db.query(sql, (err, results) => {
     // console.log(err, results)
     res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: "删除门票成功",
       data: results
     })

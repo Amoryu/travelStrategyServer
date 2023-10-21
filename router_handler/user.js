@@ -6,25 +6,21 @@ const uuid = require('node-uuid')
 const md5 = require('js-md5')
 const fs = require('fs')
 const path = require('path')
-const { ResultCodeEnum, TABLE, Applet } = require('../common/constant.js')
+const { RESULT_CODE, TABLE, APPLET } = require('../common/constant.js')
+const {
+  deleteLastPicture
+} = require('../common/utils')
 
-
-/** 
- * 小程序的接口
- *  */
 exports.login = (req, res) => {
   // console.log(req.body)
+  const sql = `select * from ${TABLE.User} where ${req.body.mode === 'wechat' ? 'wxtoken' : 'username'} ="${req.body.token}"`
 
-  const sql = `select * from ${TABLE.User} where username = "${req.body.userName}"`
   db.query(sql, (err, results) => {
     // console.log(err, results)
-    res.send({
-      code: ResultCodeEnum.SUCCESS,
+    res.status(200).send({
+      code: RESULT_CODE.SUCCESS,
       msg: "登录成功",
-      data: {
-        userInfo: results[0],
-        access_token: results[0].role
-      }
+      data: results[0]
     })
   })
 
@@ -39,8 +35,7 @@ exports.register = (req, res) => {
     name: '游客' + req.body.token.substr(3, 7),
     address: '',
     signature: '暂时还没有签名',
-    // avatar: config.baseURL + ":" + config.PORT + '/uploads/' + 'defaultAvatar.jpg',
-    avatar: config.baseURL + '/uploads/' + 'defaultAvatar.jpg',
+    avatar: config.baseURL + '/uploads/defaultAvatar.jpg',
     gender: 1,
   }
   const sql = `insert ${TABLE.User} set ?`
@@ -51,35 +46,29 @@ exports.register = (req, res) => {
       msg: "注册失败,请稍后重试"
     });
     return res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: "注册成功！",
       data: newUserInfo,
     });
   })
 }
-// 根据token获取用户信息 （账号密码登录的用户）
-exports.user = (req, res) => {
-  const sql = `select * from ${TABLE.User} where token ="${req.body.token}"`
+// 根据token或username获取用户信息 （账号密码登录的用户）
+exports.getUser = (req, res) => {
+  let sql = `select * from ${TABLE.User} `
+
+  if (req.query.token) {
+    sql += `where token ="${req.query.token}"`
+  }
+  if (req.query.userName) {
+    sql += `where username ="${req.query.userName}"`
+  }
+
   db.query(sql, (err, results) => {
 
-    const user = { ...results[0] }
-    res.send({
-      code: ResultCodeEnum.SUCCESS,
+    res.status(200).send({
+      code: RESULT_CODE.SUCCESS,
       msg: "登录成功！",
-      user,
-    })
-  })
-}
-// 根据微信openid获取用户信息 （微信登录的用户）
-exports.wxUser = (req, res) => {
-  const sql = `select * from ${TABLE.User} where wxtoken ="${req.body.id}"`
-  db.query(sql, (err, results) => {
-
-    const user = { ...results[0] }
-    res.send({
-      status: 0,
-      msg: "登录成功！",
-      user,
+      data: results[0],
     })
   })
 }
@@ -88,9 +77,9 @@ exports.wxAuth = (req, res) => {
   // console.log(req.body)
 
   const url = 'https://api.weixin.qq.com/sns/jscode2session?'
-    + 'appid=' + Applet.appid
-    + '&secret=' + Applet.secret
-    + '&js_code=' + req.body.code
+    + 'appid=' + APPLET.appid
+    + '&secret=' + APPLET.secret
+    + '&js_code=' + req.query.code
     + '&grant_type=authorization_code'
 
   request(url, (err, response, body) => {
@@ -98,9 +87,9 @@ exports.wxAuth = (req, res) => {
     if (session.openid) {
       // 查询数据库，无则插入，有则返回用户信息
       db.query(`select * from ${TABLE.User} where wxtoken ="${md5(session.openid)}"`, (err, results) => {
-        if (results.length !== 0) {   //有该用户则返回用户信息
+        if (results.length !== 0) {   //有该用户则返回用户信息,（已经授权登录）
           return res.send({
-            code: ResultCodeEnum.SUCCESS,
+            code: RESULT_CODE.SUCCESS,
             msg: "登录成功",
             data: results
           });
@@ -126,7 +115,7 @@ exports.wxAuth = (req, res) => {
               msg: "注册失败,请稍后重试"
             });
             return res.send({
-              code: ResultCodeEnum.SUCCESS,
+              code: RESULT_CODE.SUCCESS,
               msg: "注册成功！即将跳转登录",
               data: WxUserInfo,
             })
@@ -143,7 +132,7 @@ exports.wxAuth = (req, res) => {
 
 }
 // 使用微信授权注册用户
-exports.storeWxUser = (req, res) => {
+exports.WxUser = (req, res) => {
   // console.log(req.body)
   let userInfo = req.body
 
@@ -155,55 +144,27 @@ exports.storeWxUser = (req, res) => {
       msg: "登录失败,请稍后重试"
     });
     return res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: "登录成功！即将跳转登录",
       data: userInfo,
     })
   })
 }
-// 上传头像
-exports.postAvatar = (req, res) => {
-  // console.log("上传的东西呢", req.body.username)
-  // console.log(req.file)
-  let lastPicture = null
-  db.query(`select avatar from ${TABLE.User} where username ="${req.body.username}"`, (err, results) => {
-    // console.log(err, results)
-    if (!!results.length) {
-      lastPicture = results[0].avatar
-      fs.unlink(`./uploads/${lastPicture.split('uploads/')[1]}`, (err) => {
-        // if (err) throw err;
-        console.log(lastPicture.split('uploads/')[1] + '文件已删除');
-      });
-    }
-  })
-  res.send({
-    code: ResultCodeEnum.SUCCESS,
-    // avatar: config.baseURL + ":" + config.PORT + '/uploads/' + req.file.filename,
-    avatar: config.baseURL + '/uploads/' + req.file.filename,
-  })
-}
-
 // 更新用户信息
 exports.updateUserInfo = (req, res) => {
-  console.log(req.body)
+  // console.log(req.body)
   const { username, name, avatar, address, phone, gender, signature } = req.body
 
   let lastPicture = null;
   db.query(`select avatar from ${TABLE.User} where username = "${username}"`, (err, results) => {
-    console.log(results)
-    if (!!results.length) {
-      lastPicture = results[0].avatar
-      fs.unlink(`./uploads/${lastPicture.split('uploads/')[1]}`, (err) => {
-        // if (err) throw err;
-        console.log(lastPicture.split('uploads/')[1] + '文件已删除');
-      });
-    }
+
+    !!results.length && deleteLastPicture(results[0].avatar)
 
     const sql = `update ${TABLE.User} set name = ?, avatar = ?,address = ?,phone = ?,gender = ?,signature = ? where username = "${username}"`
     db.query(sql, [name, avatar, address, phone, gender, signature], (err, results) => {
       if (results.affectedRows === 1) {
         res.send({
-          code: ResultCodeEnum.SUCCESS,
+          code: RESULT_CODE.SUCCESS,
           data: results,
           msg: '修改用户资料成功',
         })
@@ -215,16 +176,13 @@ exports.updateUserInfo = (req, res) => {
       }
     })
   })
-
-
 }
-
 
 // 获取用户列表
 exports.getUserList = (req, res) => {
   db.query(`select * from ${TABLE.User} `, (err, results) => {
     res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: "获取用户列表成功",
       data: results,
     })
@@ -233,56 +191,31 @@ exports.getUserList = (req, res) => {
 
 
 
-/**
- *  后台管理系统的接口
- */
-exports.back_login = (req, res) => {
-  // console.log(req.body)
-  const sql = `select * from ${TABLE.User} where username = "${req.body.username}"`
-  db.query(sql, (err, results) => {
-    // console.log(err, results)
-    res.send({
-      code: ResultCodeEnum.SUCCESS,
-      msg: "后台用户登录成功",
-      data: {
-        userInfo: results[0],
-        access_token: results[0].role
-      }
-    })
-  })
-
-}
-
-exports.back_logout = (req, res) => {
+exports.logOut = (req, res) => {
   // console.log(req.body)
   res.send({
-    code: ResultCodeEnum.SUCCESS,
+    code: RESULT_CODE.SUCCESS,
     logout: true
   })
 }
 
 exports.back_getUserList = (req, res) => {
   // console.log(req.body)
-  const searchRole = req.body.role
-  const keyword = "%" + req.body.name + "%"
-  let sql = `select * from ${TABLE.User} `
+  // console.log(req.query)
+  const searchRole = req.query.role
+  const keyword = "%" + req.query.name + "%"
 
-  if (searchRole) {
-    sql += `where role = "${searchRole}" `
-  }
-  if (req.body.name) {
-    sql += `and name like ?`
+  let sql = `select * from ${TABLE.User} where name like ? `
+
+  if (searchRole !== 'all') {
+    sql += `and role = "${searchRole}"`
   }
 
   db.query(sql, keyword, (err, results) => {
-    // console.log(err, results)
     res.send({
-      code: ResultCodeEnum.SUCCESS,
+      code: RESULT_CODE.SUCCESS,
       msg: "获取用户列表成功",
-      list: results,
-      total: results.length,
-      pageNum: 1,
-      pageSize: 10
+      data: results,
     })
   })
 
@@ -304,7 +237,7 @@ exports.changePassword = (req, res) => {
       db.query(sql, req.body.passwordForm.newPwd, (err, results) => {
         if (results.affectedRows === 1) {
           res.send({
-            code: ResultCodeEnum.SUCCESS,
+            code: RESULT_CODE.SUCCESS,
             data: results,
             msg: '修改密码成功',
           })
@@ -333,14 +266,14 @@ exports.changeUsername = (req, res) => {
       msg: '该用户名已被使用',
     })
     if (results.affectedRows === 1) {
-      res.send({
-        code: ResultCodeEnum.SUCCESS,
-        data: results,
+      res.status(202).send({
+        code: RESULT_CODE.SUCCESS,
+        data: username,
         msg: '修改用户名成功',
       })
     } else {
-      res.send({
-        code: 404,
+      res.status(400).send({
+        code: 400,
         msg: '修改用户名失败',
       })
     }
@@ -357,7 +290,7 @@ exports.back_updateUserInfo = (req, res) => {
   db.query(sql, role, (err, results) => {
     if (results.affectedRows === 1) {
       res.send({
-        code: ResultCodeEnum.SUCCESS,
+        code: RESULT_CODE.SUCCESS,
         data: results,
         msg: '修改用户权限成功',
       })
@@ -368,4 +301,24 @@ exports.back_updateUserInfo = (req, res) => {
       })
     }
   })
+}
+
+exports.back_deleteUser = (req, res) => {
+  // console.log(req.query)
+
+  db.query(`delete from ${TABLE.User} where username = "${req.query.username}"`, (err, results) => {
+    if (results.affectedRows === 1) {
+      res.send({
+        code: RESULT_CODE.SUCCESS,
+        data: results,
+        msg: '已删除该用户',
+      })
+    } else {
+      res.send({
+        code: 400,
+        msg: '删除该用户失败',
+      })
+    }
+  })
+
 }
